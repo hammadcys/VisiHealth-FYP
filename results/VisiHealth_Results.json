@@ -1,0 +1,13 @@
+{
+    "test_accuracy": 71.5831,
+    "test_accuracy_status": "evaluated",
+    "last_known_val_accuracy": 74.35897435897436,
+    "last_known_test_accuracy": 71.5831,
+    "correct": 728,
+    "total": 1017,
+    "checkpoint": "checkpoints/best_checkpoint.pth",
+    "model_version": "Latest (Phase A+B+C + Bug Fixes - Real Cross-Attention)",
+    "epochs_trained": 124,
+    "platform": "Kaggle T4 GPU",
+    "notes": "Evaluated on SLAKE 1.0 English test set (1017 samples). Val accuracy 74.36%. Test accuracy 71.58% — ~2.8% generalisation gap, expected behaviour."
+}

@@ -1,0 +1,7 @@
+{
+  "epoch": 86,
+  "best_val_acc": 73.1244064577398,
+  "best_val_loss": 6.623477997201862,
+  "cnn_num_classes": 202,
+  "image_size": null
+}

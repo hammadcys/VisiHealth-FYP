@@ -1,0 +1,132 @@
+# VisiHealth AI Configuration — Phases A+B+C Accuracy Improvements
+
+# Dataset Configuration
+dataset:
+  name: "SLAKE"
+  root_dir: "./data/Slake/Slake1.0"
+  images_dir: "./data/Slake/Slake1.0/imgs"
+  qa_file: "./data/Slake/Slake1.0/train.json"
+  val_file: "./data/Slake/Slake1.0/validate.json"
+  test_file: "./data/Slake/Slake1.0/test.json"
+  kg_file: "./kg.txt"             # Actual KG file location (root-level kg.txt, 231KB)
+  masks_dir: "./data/Slake/Slake1.0/masks"
+  language: "en"  # English subset
+  max_qa_pairs: -1  # -1 for all pairs
+
+# Image Configuration
+# Training from scratch at 336x336 — finer medical detail.
+# At 336px, ResNet50 layer4 produces ~10x10=100 spatial tokens (vs 49 at 224)
+# giving the cross-attention 2x more image regions to reason over.
+# Change back to 224 ONLY if loading an old 224-trained checkpoint.
+image:
+  size: 336
+  channels: 3
+  augmentation:
+    rotation_range: 15
+    horizontal_flip: true
+    vertical_flip: false  # DISABLED — destroys medical image semantics
+    brightness: 0.2
+    contrast: 0.2
+    zoom_range: 0.1
+
+# Model Configuration
+model:
+  # CNN Configuration
+  cnn:
+    architecture: "resnet50"
+    input_size: 336           # Matches image.size above (100 spatial tokens at 336)
+    num_classes: 221          # Will be updated automatically from dataset
+    dropout: 0.25              # Reduced from 0.4 — was over-regularizing (underfitting)
+    feature_dim: 512
+    roi_layers: [3, 4]
+    pretrained: true
+
+  # BERT Configuration
+  bert:
+    model_name: "michiyasunaga/BioLinkBERT-base"
+    max_length: 128
+    hidden_size: 768
+    dropout: 0.1              # Reduced from 0.2 — less regularization to combat underfitting
+    freeze_layers: 2          # Freeze bottom 2 only — 10/12 layers trainable (sweet spot)
+
+  # Phase B: Cross-Attention Fusion (replaces concat)
+  fusion:
+    method: "cross_attention"
+    num_heads: 8
+    dropout: 0.1
+    hidden_dims: [512, 256]   # kept for backward compat, not used by cross-attn
+
+# Training Configuration
+training:
+  # Batch size reduced to 8 (from 16) to fit 336x336 images on Kaggle T4 GPU.
+  # Effective batch = batch_size * gradient_accumulation_steps = 8 * 8 = 64 (same as before).
+  batch_size: 8              # Reduced from 32 due to larger images + cross-attn
+  num_epochs: 200            # Increased from 150 — model was stopping too early
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  optimizer: "adamw"
+  scheduler: "reduce_on_plateau"  # Auto-halves LR when val loss plateaus — more adaptive
+  warmup_epochs: 10
+  min_lr: 0.000001
+  patience: 10
+  gradient_clip: 1.0
+  # Increased to 8 (from 4) to compensate for halved batch_size.
+  # Effective batch stays at 64: 8 samples x 8 accumulation steps.
+  gradient_accumulation_steps: 8
+  mixed_precision: true
+
+  # Phase C: Label smoothing — prevents overconfident predictions
+  label_smoothing: 0.05      # Reduced from 0.1 — was suppressing model confidence too much
+
+  # Focal Loss (alternative to weighted CE — better for severe class imbalance)
+  # Set use_focal_loss: true to activate. gamma=2.0 is standard.
+  use_focal_loss: true       # Enabled — focuses learning on hard/rare classes
+  focal_gamma: 2.0
+
+  # Multi-task Learning
+  multitask:
+    enabled: true
+    segmentation_weight: 0.2  # Reduced from 0.3 — VQA is primary
+    vqa_weight: 1.0
+
+  # Early Stopping
+  early_stopping:
+    enabled: true
+    patience: 30              # Increased from 20 — give model more time before stopping
+    min_delta: 0.001
+
+# Knowledge Graph Configuration
+knowledge_graph:
+  index_method: "entity_relation"
+  retrieval_topk: 3
+  similarity_threshold: 0.5
+  use_embeddings: false
+
+# Rationale Generation
+rationale:
+  template: "Detected {roi}. Knowledge Graph indicates: {kg_fact}. Therefore, the answer is {prediction}."
+  max_length: 256
+  use_confidence: true
+
+# Evaluation
+evaluation:
+  metrics: ["accuracy", "bleu", "exact_match"]
+  save_predictions: true
+  visualize_results: true
+
+# System Configuration
+system:
+  device: "cuda"
+  num_workers: 4
+  seed: 42
+  save_dir: "./checkpoints"
+  log_dir: "./logs"
+  results_dir: "./results"
+
+# Web Application
+webapp:
+  host: "0.0.0.0"
+  port: 5000
+  debug: false
+  upload_folder: "./uploads"
+  max_file_size: 16  # MB

@@ -1,0 +1,25 @@
+# VisiHealth AI - Flask Backend Requirements
+
+# Web Framework
+Flask==3.0.0
+flask-cors==4.0.0
+Werkzeug==3.0.1
+
+# HTTP & API
+requests==2.31.0
+
+# Already installed (from main project)
+# PyTorch, torchvision - Use existing installation
+# transformers - Use existing installation
+# Pillow - Use existing installation
+
+# Data processing
+numpy>=1.26.4
+PyYAML==6.0.1
+
+# Visualization (for attention maps)
+matplotlib==3.8.2
+
+# Optional - Production server
+gunicorn==21.2.0  # For production deployment
+python-dotenv==1.0.0  # For environment variables

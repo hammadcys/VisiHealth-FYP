@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Large Files & Model Weights (DO NOT UPLOAD TO GITHUB)
+checkpoints/*.pth
+checkpoints/*.pt
+data/
+colab_notebooks/
+
+# Node / Next.js
+visihealth-frontend/node_modules/
+visihealth-frontend/.next/
+visihealth-frontend/out/
+visihealth-frontend/build/
+visihealth-frontend/.env*.local
+
+# Backend Temporary Files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDE and OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
